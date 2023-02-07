@@ -13,6 +13,7 @@ class PageManager {
     _audioPlayer.playerStateStream.listen((playerState) {
       final isPlaying = playerState.playing;
       final processingState = playerState.processingState;
+      print(processingState);
       if (processingState == ProcessingState.loading ||
           processingState == ProcessingState.buffering) {
         buttonNotifier.value = ButtonState.loading;
