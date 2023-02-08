@@ -3,13 +3,13 @@ import 'package:just_audio/just_audio.dart';
 
 class PageManager {
   static const url = 'https://live.leproradio.com/tribe.ogg';
+  bool urlIsSet = false;
   late AudioPlayer _audioPlayer;
   PageManager() {
     _init();
   }
   void _init() async {
     _audioPlayer = AudioPlayer();
-    await _audioPlayer.setUrl(url);
     _audioPlayer.playerStateStream.listen((playerState) {
       final isPlaying = playerState.playing;
       final processingState = playerState.processingState;
@@ -23,50 +23,24 @@ class PageManager {
         buttonNotifier.value = ButtonState.playing;
       }
     });
-
-    _audioPlayer.positionStream.listen((position) {
-      final oldState = progressNotifier.value;
-      progressNotifier.value = ProgressBarState(
-        current: position,
-        buffered: oldState.buffered,
-        total: oldState.total,
-      );
-    });
-
-    _audioPlayer.bufferedPositionStream.listen((bufferedPosition) {
-      final oldState = progressNotifier.value;
-      progressNotifier.value = ProgressBarState(
-        current: oldState.current,
-        buffered: bufferedPosition,
-        total: oldState.total,
-      );
-    });
-
-    _audioPlayer.durationStream.listen((totalDuration) {
-      final oldState = progressNotifier.value;
-      progressNotifier.value = ProgressBarState(
-        current: oldState.current,
-        buffered: oldState.buffered,
-        total: totalDuration ?? Duration.zero,
-      );
-    });
   }
 
-  final progressNotifier = ValueNotifier<ProgressBarState>(
-    ProgressBarState(
-      current: Duration.zero,
-      buffered: Duration.zero,
-      total: Duration.zero,
-    ),
-  );
   final buttonNotifier = ValueNotifier<ButtonState>(ButtonState.paused);
 
   void play() {
+    if (!urlIsSet) {
+      _audioPlayer.setUrl(url);
+      urlIsSet = true;
+    }
     _audioPlayer.play();
   }
 
   void pause() {
     _audioPlayer.pause();
+  }
+
+  void stop() {
+    _audioPlayer.stop();
   }
 
   void dispose() {

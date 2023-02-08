@@ -65,12 +65,26 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    double statusBarHeight = MediaQuery.of(context).padding.top;
+    _pageManager.buttonNotifier.addListener(() {
+      final state = _pageManager.buttonNotifier.value;
+      switch (state) {
+        case ButtonState.paused:
+          _heartAnimationController.reset();
+          break;
+        case ButtonState.playing:
+          _heartAnimationController.forward();
+          break;
+        case ButtonState.loading:
+          _heartAnimationController.reset();
+          break;
+      }
+    });
+
     return WillPopScope(
         onWillPop: _onWillPop,
         child: OrientationBuilder(builder: (orientationContext, orientation) {
           return Container(
-              padding: EdgeInsets.only(top: statusBarHeight),
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
               decoration: BoxDecoration(
                   image: DecorationImage(
                       fit: orientation == Orientation.portrait
@@ -102,54 +116,6 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         ],
                       )));
         }));
-    // return MaterialApp(
-    //   home: Scaffold(
-    //     body: Padding(
-    //       padding: const EdgeInsets.all(20.0),
-    //       child: Column(
-    //         children: [
-    //           const Spacer(),
-    //           ValueListenableBuilder<ProgressBarState>(
-    //             valueListenable: _pageManager.progressNotifier,
-    //             builder: (_, value, __) {
-    //               return ProgressBar(
-    //                 progress: value.current,
-    //                 buffered: value.buffered,
-    //                 total: value.total,
-    //               );
-    //             },
-    //           ),
-    //           ValueListenableBuilder<ButtonState>(
-    //             valueListenable: _pageManager.buttonNotifier,
-    //             builder: (_, value, __) {
-    //               switch (value) {
-    //                 case ButtonState.loading:
-    //                   return Container(
-    //                     margin: const EdgeInsets.all(8.0),
-    //                     width: 32.0,
-    //                     height: 32.0,
-    //                     child: const CircularProgressIndicator(),
-    //                   );
-    //                 case ButtonState.paused:
-    //                   return IconButton(
-    //                     icon: const Icon(Icons.play_arrow),
-    //                     iconSize: 32.0,
-    //                     onPressed: _pageManager.play,
-    //                   );
-    //                 case ButtonState.playing:
-    //                   return IconButton(
-    //                     icon: const Icon(Icons.pause),
-    //                     iconSize: 32.0,
-    //                     onPressed: _pageManager.pause,
-    //                   );
-    //               }
-    //             },
-    //           ),
-    //         ],
-    //       ),
-    //     ),
-    //   ),
-    // );
   }
 
   Widget _buildPlayer() => AnimatedBuilder(
@@ -172,60 +138,34 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                             builder: (_, value, __) {
                               switch (value) {
                                 case ButtonState.loading:
-                                  return const SizedBox(
-                                    // height: box.maxHeight,
-                                    // width: box.maxHeight,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 4,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color.fromRGBO(255, 255, 255, 0.8)),
+                                  return GestureDetector(
+                                    onTap: () => _pageManager.stop(),
+                                    child: const SizedBox(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 4,
+                                        valueColor: AlwaysStoppedAnimation<
+                                                Color>(
+                                            Color.fromRGBO(255, 255, 255, 0.8)),
+                                      ),
                                     ),
                                   );
-                                // return IconButton(
-                                //   icon: Image.asset('assets/play_btn.png'),
-                                //   iconSize: 200,
-                                //   onPressed: () {},
-                                // );
                                 case ButtonState.paused:
                                   return IconButton(
                                     icon: Image.asset('assets/play_btn.png'),
-                                    iconSize: 200,
                                     onPressed: () {
                                       _pageManager.play();
-                                      _heartAnimationController.forward();
                                     },
                                   );
                                 case ButtonState.playing:
                                   return IconButton(
                                     icon: Image.asset('assets/stop_btn.png'),
-                                    iconSize: 200,
                                     onPressed: () {
                                       _pageManager.pause();
-                                      _heartAnimationController.reset();
                                     },
                                   );
                               }
                             },
                           ),
-                          // child: FloatingActionButton(
-                          //   backgroundColor: Colors.transparent,
-                          //   child: isLoading
-                          //       ? SizedBox(
-                          //           child: CircularProgressIndicator(
-                          //             strokeWidth: 4,
-                          //             valueColor: AlwaysStoppedAnimation<Color>(
-                          //                 Color.fromRGBO(255, 255, 255, 0.8)),
-                          //           ),
-                          //           height: contstraints.maxHeight,
-                          //           width: contstraints.maxHeight,
-                          //         )
-                          //       : (isPlaying
-                          //           ? Image.asset('assets/stop_btn.png')
-                          //           : Image.asset('assets/play_btn.png')),
-                          //   onPressed: () => isLoading
-                          //       ? null
-                          //       : player.playOrPause(playerState),
-                          // ),
                         ),
                       )));
         },
