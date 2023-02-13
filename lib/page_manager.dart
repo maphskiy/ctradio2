@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 class PageManager {
-  static const url = 'https://live.leproradio.com/tribe.ogg';
   bool urlIsSet = false;
   late AudioPlayer _audioPlayer;
-  PageManager() {
+  late String _url;
+  PageManager(String url) {
+    _url = url;
     _init();
   }
   void _init() async {
@@ -13,7 +14,6 @@ class PageManager {
     _audioPlayer.playerStateStream.listen((playerState) {
       final isPlaying = playerState.playing;
       final processingState = playerState.processingState;
-      print(processingState);
       if (processingState == ProcessingState.loading ||
           processingState == ProcessingState.buffering) {
         buttonNotifier.value = ButtonState.loading;
@@ -23,13 +23,20 @@ class PageManager {
         buttonNotifier.value = ButtonState.playing;
       }
     });
+
+    _audioPlayer.icyMetadataStream.listen((event) {
+      var trackInfo = TrackInfo();
+      trackInfo.name = event?.headers?.name;
+      trackInfoNotifier.value = trackInfo;
+    });
   }
 
   final buttonNotifier = ValueNotifier<ButtonState>(ButtonState.paused);
+  final trackInfoNotifier = ValueNotifier<TrackInfo>(TrackInfo());
 
   void play() {
     if (!urlIsSet) {
-      _audioPlayer.setUrl(url);
+      _audioPlayer.setUrl(_url);
       urlIsSet = true;
     }
     _audioPlayer.play();
@@ -60,3 +67,7 @@ class ProgressBarState {
 }
 
 enum ButtonState { paused, playing, loading }
+
+class TrackInfo {
+  String? name;
+}

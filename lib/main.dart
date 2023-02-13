@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'page_manager.dart';
+
+const animationSpeed = 570;
+const url = 'https://live.leproradio.com/tribe.ogg';
+const showTrackInfo = false;
+const trackTextScale = 1.8;
+const trackTextColor = Color.fromRGBO(255, 255, 255, 0.7);
 
 void main() => runApp(const MaterialApp(
     title: "Criminal Tribe Radio", home: Scaffold(body: MyApp())));
@@ -19,10 +26,9 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _pageManager = PageManager();
-    var baseSpeed = 570;
+    _pageManager = PageManager(url);
     _heartAnimationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: baseSpeed));
+        vsync: this, duration: const Duration(milliseconds: animationSpeed));
     _heartAnimation = Tween(begin: 0, end: 0.01).animate(CurvedAnimation(
         curve: Curves.bounceOut, parent: _heartAnimationController));
 
@@ -113,6 +119,16 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                 color: Colors.transparent,
                                 child: _buildPlayer()),
                           ),
+                          if (showTrackInfo)
+                            SizedBox(
+                              height: (constraints.maxHeight -
+                                      constraints.minHeight) *
+                                  0.3,
+                              child: Container(
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.all(20),
+                                  child: _buildTrackInfo()),
+                            ),
                         ],
                       )));
         }));
@@ -179,4 +195,52 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                     : BoxFit.fitHeight,
                 image: const AssetImage('assets/header.png'))),
       );
+
+  Widget _buildTrackInfo() =>
+      Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+        GestureDetector(
+            // TODO
+            // onTap: () {
+            //   Clipboard.setData(new ClipboardData(text: track)).then((_) {
+            //     Scaffold.of(context).showSnackBar(SnackBar(
+            //         content: Text("Track name copied to clipboard")));
+            //   });
+            // },
+            child: ValueListenableBuilder<TrackInfo>(
+          valueListenable: _pageManager.trackInfoNotifier,
+          builder: (trackInfoContext, trackInfo, trackInfoWidget) {
+            var track = trackInfo.name;
+            if (trackInfo.name != null) {
+              return ValueListenableBuilder<ButtonState>(
+                  valueListenable: _pageManager.buttonNotifier,
+                  builder: (buttonStateContext, buttonStateValue,
+                      buttonStateWidget) {
+                    switch (buttonStateValue) {
+                      case ButtonState.playing:
+                        return Shimmer.fromColors(
+                          baseColor: trackTextColor,
+                          highlightColor: Colors.white,
+                          child: Text(
+                            track ?? '',
+                            textAlign: TextAlign.center,
+                            textScaleFactor: trackTextScale,
+                          ),
+                        );
+                      default:
+                        return Text(
+                          track ?? '',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: trackTextColor,
+                          ),
+                          textScaleFactor: trackTextScale,
+                        );
+                    }
+                  });
+            } else {
+              return const Text('');
+            }
+          },
+        ))
+      ]);
 }
