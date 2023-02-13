@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
-class PageManager {
+class Player {
   bool urlIsSet = false;
   late AudioPlayer _audioPlayer;
   late String _url;
-  PageManager(String url) {
+  Player(String url) {
     _url = url;
     _init();
   }
@@ -16,11 +16,11 @@ class PageManager {
       final processingState = playerState.processingState;
       if (processingState == ProcessingState.loading ||
           processingState == ProcessingState.buffering) {
-        buttonNotifier.value = ButtonState.loading;
+        playerStateNotifier.value = PlayerState.loading;
       } else if (!isPlaying) {
-        buttonNotifier.value = ButtonState.paused;
+        playerStateNotifier.value = PlayerState.paused;
       } else {
-        buttonNotifier.value = ButtonState.playing;
+        playerStateNotifier.value = PlayerState.playing;
       }
     });
 
@@ -31,7 +31,7 @@ class PageManager {
     });
   }
 
-  final buttonNotifier = ValueNotifier<ButtonState>(ButtonState.paused);
+  final playerStateNotifier = ValueNotifier<PlayerState>(PlayerState.paused);
   final trackInfoNotifier = ValueNotifier<TrackInfo>(TrackInfo());
 
   void play() {
@@ -55,18 +55,7 @@ class PageManager {
   }
 }
 
-class ProgressBarState {
-  ProgressBarState({
-    required this.current,
-    required this.buffered,
-    required this.total,
-  });
-  final Duration current;
-  final Duration buffered;
-  final Duration total;
-}
-
-enum ButtonState { paused, playing, loading }
+enum PlayerState { paused, playing, loading }
 
 class TrackInfo {
   String? name;

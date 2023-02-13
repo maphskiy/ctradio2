@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'page_manager.dart';
+import 'player.dart';
 
 const animationSpeed = 570;
 const url = 'https://live.leproradio.com/tribe.ogg';
@@ -19,22 +19,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  late final PageManager _pageManager;
-  late final Animation _heartAnimation;
-  late final AnimationController _heartAnimationController;
+  late final Player _player;
+  late final Animation _animation;
+  late final AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
-    _pageManager = PageManager(url);
-    _heartAnimationController = AnimationController(
+    _player = Player(url);
+    _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: animationSpeed));
-    _heartAnimation = Tween(begin: 0, end: 0.01).animate(CurvedAnimation(
-        curve: Curves.bounceOut, parent: _heartAnimationController));
+    _animation = Tween(begin: 0, end: 0.01).animate(
+        CurvedAnimation(curve: Curves.bounceOut, parent: _animationController));
 
-    _heartAnimationController.addStatusListener((AnimationStatus status) {
+    _animationController.addStatusListener((AnimationStatus status) {
       if (status == AnimationStatus.completed) {
-        _heartAnimationController.repeat();
+        _animationController.repeat();
       }
     });
   }
@@ -52,7 +52,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           ),
           TextButton(
             onPressed: () {
-              _pageManager.pause();
+              _player.pause();
               return Navigator.of(context).pop(true);
             },
             child: const Text('Yes'),
@@ -64,24 +64,24 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _pageManager.dispose();
-    _heartAnimationController.dispose();
+    _player.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    _pageManager.buttonNotifier.addListener(() {
-      final state = _pageManager.buttonNotifier.value;
+    _player.playerStateNotifier.addListener(() {
+      final state = _player.playerStateNotifier.value;
       switch (state) {
-        case ButtonState.paused:
-          _heartAnimationController.reset();
+        case PlayerState.paused:
+          _animationController.reset();
           break;
-        case ButtonState.playing:
-          _heartAnimationController.forward();
+        case PlayerState.playing:
+          _animationController.forward();
           break;
-        case ButtonState.loading:
-          _heartAnimationController.reset();
+        case PlayerState.loading:
+          _animationController.reset();
           break;
       }
     });
@@ -135,11 +135,11 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildPlayer() => AnimatedBuilder(
-        animation: _heartAnimationController,
+        animation: _animationController,
         builder: (context, child) {
           return Container(
               margin: EdgeInsets.all(
-                  MediaQuery.of(context).size.height * _heartAnimation.value),
+                  MediaQuery.of(context).size.height * _animation.value),
               decoration: const BoxDecoration(
                   image: DecorationImage(
                       fit: BoxFit.fitHeight,
@@ -149,13 +149,13 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                         child: ConstrainedBox(
                           constraints: BoxConstraints.tight(
                               Size.fromRadius(box.maxHeight * 0.225)),
-                          child: ValueListenableBuilder<ButtonState>(
-                            valueListenable: _pageManager.buttonNotifier,
+                          child: ValueListenableBuilder<PlayerState>(
+                            valueListenable: _player.playerStateNotifier,
                             builder: (_, value, __) {
                               switch (value) {
-                                case ButtonState.loading:
+                                case PlayerState.loading:
                                   return GestureDetector(
-                                    onTap: () => _pageManager.stop(),
+                                    onTap: () => _player.stop(),
                                     child: const SizedBox(
                                       child: CircularProgressIndicator(
                                         strokeWidth: 4,
@@ -165,18 +165,18 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                       ),
                                     ),
                                   );
-                                case ButtonState.paused:
+                                case PlayerState.paused:
                                   return IconButton(
                                     icon: Image.asset('assets/play_btn.png'),
                                     onPressed: () {
-                                      _pageManager.play();
+                                      _player.play();
                                     },
                                   );
-                                case ButtonState.playing:
+                                case PlayerState.playing:
                                   return IconButton(
                                     icon: Image.asset('assets/stop_btn.png'),
                                     onPressed: () {
-                                      _pageManager.pause();
+                                      _player.pause();
                                     },
                                   );
                               }
@@ -199,7 +199,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   Widget _buildTrackInfo() =>
       Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
         GestureDetector(
-            // TODO
+            // TODO Add copy track info to clipboard
             // onTap: () {
             //   Clipboard.setData(new ClipboardData(text: track)).then((_) {
             //     Scaffold.of(context).showSnackBar(SnackBar(
@@ -207,16 +207,16 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
             //   });
             // },
             child: ValueListenableBuilder<TrackInfo>(
-          valueListenable: _pageManager.trackInfoNotifier,
+          valueListenable: _player.trackInfoNotifier,
           builder: (trackInfoContext, trackInfo, trackInfoWidget) {
             var track = trackInfo.name;
             if (trackInfo.name != null) {
-              return ValueListenableBuilder<ButtonState>(
-                  valueListenable: _pageManager.buttonNotifier,
-                  builder: (buttonStateContext, buttonStateValue,
-                      buttonStateWidget) {
-                    switch (buttonStateValue) {
-                      case ButtonState.playing:
+              return ValueListenableBuilder<PlayerState>(
+                  valueListenable: _player.playerStateNotifier,
+                  builder: (playerStateContext, playerStateValue,
+                      playerStateWidget) {
+                    switch (playerStateValue) {
+                      case PlayerState.playing:
                         return Shimmer.fromColors(
                           baseColor: trackTextColor,
                           highlightColor: Colors.white,
