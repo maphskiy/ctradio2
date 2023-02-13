@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'player.dart';
+import 'page_manager.dart';
+import 'service_locator.dart';
 
 const animationSpeed = 570;
-const url = 'https://live.leproradio.com/tribe.ogg';
 const showTrackInfo = true;
 const trackTextScale = 1.8;
 const trackTextColor = Color.fromRGBO(255, 255, 255, 0.7);
 
-void main() => runApp(const MaterialApp(
-    title: "Criminal Tribe Radio", home: Scaffold(body: MyApp())));
+void main() async {
+  await setupServiceLocator();
+  runApp(const MaterialApp(
+      title: "Criminal Tribe Radio", home: Scaffold(body: MyApp())));
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -19,14 +22,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
-  late final Player _player;
   late final Animation _animation;
   late final AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
-    _player = Player(url);
+    getIt<PageManager>().init();
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: animationSpeed));
     _animation = Tween(begin: 0, end: 0.01).animate(
@@ -40,6 +42,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   Future<bool> _onWillPop() {
+    final player = getIt<PageManager>();
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,7 +55,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           ),
           TextButton(
             onPressed: () {
-              _player.pause();
+              player.pause();
               return Navigator.of(context).pop(true);
             },
             child: const Text('Yes'),
@@ -64,15 +67,16 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
 
   @override
   void dispose() {
-    _player.dispose();
+    getIt<PageManager>().dispose();
     _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    _player.playerStateNotifier.addListener(() {
-      final state = _player.playerStateNotifier.value;
+    final player = getIt<PageManager>();
+    player.playerStateNotifier.addListener(() {
+      final state = player.playerStateNotifier.value;
       switch (state) {
         case PlayerState.paused:
           _animationController.reset();
@@ -137,6 +141,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   Widget _buildPlayer() => AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
+          final player = getIt<PageManager>();
           return Container(
               margin: EdgeInsets.all(
                   MediaQuery.of(context).size.height * _animation.value),
@@ -150,12 +155,12 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                           constraints: BoxConstraints.tight(
                               Size.fromRadius(box.maxHeight * 0.225)),
                           child: ValueListenableBuilder<PlayerState>(
-                            valueListenable: _player.playerStateNotifier,
+                            valueListenable: player.playerStateNotifier,
                             builder: (_, value, __) {
                               switch (value) {
                                 case PlayerState.loading:
                                   return GestureDetector(
-                                    onTap: () => _player.stop(),
+                                    onTap: () => player.stop(),
                                     child: const SizedBox(
                                       child: CircularProgressIndicator(
                                         strokeWidth: 4,
@@ -169,14 +174,14 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                                   return IconButton(
                                     icon: Image.asset('assets/play_btn.png'),
                                     onPressed: () {
-                                      _player.play();
+                                      player.play();
                                     },
                                   );
                                 case PlayerState.playing:
                                   return IconButton(
                                     icon: Image.asset('assets/stop_btn.png'),
                                     onPressed: () {
-                                      _player.pause();
+                                      player.pause();
                                     },
                                   );
                               }
@@ -196,51 +201,55 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
                 image: const AssetImage('assets/header.png'))),
       );
 
-  Widget _buildTrackInfo() =>
-      Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-        GestureDetector(
-            // TODO Add copy track info to clipboard
-            // onTap: () {
-            //   Clipboard.setData(new ClipboardData(text: track)).then((_) {
-            //     Scaffold.of(context).showSnackBar(SnackBar(
-            //         content: Text("Track name copied to clipboard")));
-            //   });
-            // },
-            child: ValueListenableBuilder<TrackInfo>(
-          valueListenable: _player.trackInfoNotifier,
-          builder: (trackInfoContext, trackInfo, trackInfoWidget) {
-            var track = trackInfo.name;
-            if (trackInfo.name != null) {
-              return ValueListenableBuilder<PlayerState>(
-                  valueListenable: _player.playerStateNotifier,
-                  builder: (playerStateContext, playerStateValue,
-                      playerStateWidget) {
-                    switch (playerStateValue) {
-                      case PlayerState.playing:
-                        return Shimmer.fromColors(
-                          baseColor: trackTextColor,
-                          highlightColor: Colors.white,
-                          child: Text(
+  Widget _buildTrackInfo() {
+    final player = getIt<PageManager>();
+    return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          GestureDetector(
+              // TODO Add copy track info to clipboard
+              // onTap: () {
+              //   Clipboard.setData(new ClipboardData(text: track)).then((_) {
+              //     Scaffold.of(context).showSnackBar(SnackBar(
+              //         content: Text("Track name copied to clipboard")));
+              //   });
+              // },
+              child: ValueListenableBuilder<TrackInfo>(
+            valueListenable: player.trackInfoNotifier,
+            builder: (trackInfoContext, trackInfo, trackInfoWidget) {
+              var track = trackInfo.name;
+              if (trackInfo.name != null && trackInfo.name != '') {
+                return ValueListenableBuilder<PlayerState>(
+                    valueListenable: player.playerStateNotifier,
+                    builder: (playerStateContext, playerStateValue,
+                        playerStateWidget) {
+                      switch (playerStateValue) {
+                        case PlayerState.playing:
+                          return Shimmer.fromColors(
+                            baseColor: trackTextColor,
+                            highlightColor: Colors.white,
+                            child: Text(
+                              track ?? '',
+                              textAlign: TextAlign.center,
+                              textScaleFactor: trackTextScale,
+                            ),
+                          );
+                        default:
+                          return Text(
                             track ?? '',
                             textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: trackTextColor,
+                            ),
                             textScaleFactor: trackTextScale,
-                          ),
-                        );
-                      default:
-                        return Text(
-                          track ?? '',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: trackTextColor,
-                          ),
-                          textScaleFactor: trackTextScale,
-                        );
-                    }
-                  });
-            } else {
-              return const Text('');
-            }
-          },
-        ))
-      ]);
+                          );
+                      }
+                    });
+              } else {
+                return const Text('');
+              }
+            },
+          ))
+        ]);
+  }
 }
