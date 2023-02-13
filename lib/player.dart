@@ -26,7 +26,7 @@ class Player {
 
     _audioPlayer.icyMetadataStream.listen((event) {
       var trackInfo = TrackInfo();
-      trackInfo.name = event?.headers?.name;
+      trackInfo.name = event?.info?.title;
       trackInfoNotifier.value = trackInfo;
     });
   }

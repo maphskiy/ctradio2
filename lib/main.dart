@@ -4,7 +4,7 @@ import 'player.dart';
 
 const animationSpeed = 570;
 const url = 'https://live.leproradio.com/tribe.ogg';
-const showTrackInfo = false;
+const showTrackInfo = true;
 const trackTextScale = 1.8;
 const trackTextColor = Color.fromRGBO(255, 255, 255, 0.7);
 
