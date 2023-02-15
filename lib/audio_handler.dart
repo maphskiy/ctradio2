@@ -7,7 +7,7 @@ Future<AudioHandler> initAudioService() async {
   return await AudioService.init(
     builder: () => MyAudioHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'org.maphskiy.ctradio.audio',
+      androidNotificationChannelId: 'org.maphskiy.ctradio.channel.audio',
       androidNotificationChannelName: 'Criminal Tribe Radio',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
@@ -32,7 +32,7 @@ class MyAudioHandler extends BaseAudioHandler {
           if (playing) MediaControl.pause else MediaControl.play,
           MediaControl.stop,
         ],
-        androidCompactActionIndices: const [0, 1, 3],
+        //androidCompactActionIndices: const [0],
         processingState: const {
           ProcessingState.idle: AudioProcessingState.idle,
           ProcessingState.loading: AudioProcessingState.loading,
@@ -55,7 +55,12 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   Future<void> play() {
     if (!urlIsSet) {
-      _player.setUrl(url);
+      const item = MediaItem(
+        id: url,
+        title: '',
+      );
+      mediaItem.add(item);
+      _player.setAudioSource(AudioSource.uri(Uri.parse(item.id)));
       urlIsSet = true;
     }
     return _player.play();

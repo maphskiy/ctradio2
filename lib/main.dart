@@ -42,7 +42,6 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
   }
 
   Future<bool> _onWillPop() {
-    final player = getIt<PageManager>();
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -55,7 +54,7 @@ class _MyAppState extends State<MyApp> with SingleTickerProviderStateMixin {
           ),
           TextButton(
             onPressed: () {
-              player.pause();
+              dispose();
               return Navigator.of(context).pop(true);
             },
             child: const Text('Yes'),
