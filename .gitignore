@@ -42,3 +42,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/*.keystore
+android/key.properties
+ios/Podfile*
+ios/build/XCBuildData/
+ios/Flutter/Debug.xcconfig
+ios/Flutter/Release.xcconfig
