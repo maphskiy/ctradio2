@@ -2,7 +2,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'dart:io' show Platform;
 
-const oggUrl = 'https://live.leproradio.com/tribe.ogg';
+const defaultUrl = 'https://live.leproradio.com/tribe.mp3';
 const aacUrl = 'https://live.leproradio.com/tribe.aac';
 
 Future<AudioHandler> initAudioService() async {
@@ -58,7 +58,7 @@ class MyAudioHandler extends BaseAudioHandler {
   Future<void> play() {
     if (!urlIsSet) {
       MediaItem item = MediaItem(
-        id: Platform.isIOS ? aacUrl : oggUrl,
+        id: Platform.isIOS ? aacUrl : defaultUrl,
         title: '',
       );
       mediaItem.add(item);
