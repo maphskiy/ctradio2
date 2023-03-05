@@ -32,7 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  just_audio: ^0.9.15
+  just_audio: ^0.9.31
   shimmer: ^2.0.0
   get_it: ^7.2.0
   audio_service: ^0.18.9
