@@ -51,4 +51,4 @@ flutter_icons:
   ios: true
   image_path: "assets/icon_white.png"
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/icon.png"
+  remove_alpha_ios: true
